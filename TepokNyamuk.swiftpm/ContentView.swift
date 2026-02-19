@@ -7,14 +7,18 @@ struct ContentView: View {
     @State private var currentCardValue = 1
     @State private var currentSuit = "spades"
     
-    let timer = Timer.publish(every: 1.0, on: .main, in: .common).autoconnect()
+    @State private var isPaused = false
+    @State private var showingHand = false
+    @State private var handAngle: Double = 0
     
+    @State private var gameTimer: Timer?
     private let synthesizer = AVSpeechSynthesizer()
     
     var body: some View {
         ZStack {
             Image("table")
                 .ignoresSafeArea()
+            
             VStack (spacing: 0) {
                 Text(getSpokenWord(for: currentSystemNumber))
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
@@ -30,6 +34,7 @@ struct ContentView: View {
                     .scaledToFit()
                     .frame(width: 150)
                     .shadow(color: .black.opacity(0.5), radius: 10, x:5, y:5)
+                    .padding(.vertical, 30)
                 
                 Text(getSpokenWord(for: currentSystemNumber))
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
@@ -40,18 +45,45 @@ struct ContentView: View {
                     .cornerRadius(16)
                     
             }
+            VStack (spacing: 0) {
+                Color.white.opacity(0.001)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        playerTapped(player: 2)
+                    }
+                Color.white.opacity(0.001)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        playerTapped(player: 1)
+                    }
+            }
+            Image("hand")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 120)
+                .rotationEffect(Angle(degrees: handAngle))
+                .shadow(radius: 10)
+                .scaleEffect(showingHand ? 1.0 : 1.5)
+                .opacity(showingHand ? 1 : 0)
         }
-        
-        .onReceive(timer) { _ in
-            nextTurn()
-        }
-        
         .onAppear {
             speak(word: getSpokenWord(for: currentSystemNumber))
+            startTimer()
+        }
+    }
+    
+    func startTimer() {
+        gameTimer?.invalidate()
+        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
+            Task { @MainActor in
+                nextTurn()
+            }
         }
     }
     
     func nextTurn() {
+        guard !isPaused else { return }
+        
         if currentSystemNumber < 13 {
             currentSystemNumber += 1
         } else {
@@ -63,6 +95,28 @@ struct ContentView: View {
         currentSuit = suits.randomElement() ?? "spades"
         
         speak(word: getSpokenWord(for: currentSystemNumber))
+    }
+    
+    func playerTapped(player: Int) {
+        guard !isPaused else { return }
+        
+        isPaused = true
+        gameTimer?.invalidate()
+        synthesizer.stopSpeaking(at: .immediate)
+        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            showingHand = true
+            handAngle = player == 1 ? 0 : 180
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showingHand = false
+            }
+            isPaused = false
+            nextTurn()
+            startTimer()
+        }
     }
     
     func getCardImageName(value: Int, suit: String) -> String {
