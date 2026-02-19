@@ -15,20 +15,30 @@ struct ContentView: View {
         ZStack {
             Image("table")
                 .ignoresSafeArea()
-            VStack {
+            VStack (spacing: 0) {
                 Text(getSpokenWord(for: currentSystemNumber))
-                    .font(.system(size: 45, weight: .heavy, design: .rounded))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 30)
+                    .padding(.horizontal, 15)
                     .padding(.vertical, 15)
                     .background(Color.black.opacity(0.7))
                     .cornerRadius(16)
+                    .rotationEffect(Angle(degrees: 180))
                 
                 Image(getCardImageName(value: currentCardValue, suit: currentSuit))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 160)
+                    .frame(width: 150)
                     .shadow(color: .black.opacity(0.5), radius: 10, x:5, y:5)
+                
+                Text(getSpokenWord(for: currentSystemNumber))
+                    .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 15)
+                    .padding(.vertical, 15)
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(16)
+                    
             }
         }
         
