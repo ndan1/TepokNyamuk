@@ -3,16 +3,27 @@ import AVFoundation
 
 struct ContentView: View {
     
+    // Game Mechanic
     @State private var currentSystemNumber = 1
     @State private var currentCardValue = 1
     @State private var currentSuit = "spades"
-    
     @State private var isPaused = false
+    @State private var gameTimer: Timer?
+    private let synthesizer = AVSpeechSynthesizer()
+    
+    // Hand Slap
     @State private var showingHand = false
     @State private var handAngle: Double = 0
     
-    @State private var gameTimer: Timer?
-    private let synthesizer = AVSpeechSynthesizer()
+    // Score
+    @State private var scoreP1: Int = 0
+    @State private var scoreP2: Int = 0
+    @State private var isFrozenP1 = false
+    @State private var isFrozenP2 = false
+    
+    // Feedback text
+    @State private var feedbackMessage = ""
+    @State private var showFeedback = false
     
     var body: some View {
         ZStack {
@@ -20,14 +31,25 @@ struct ContentView: View {
                 .ignoresSafeArea()
             
             VStack (spacing: 0) {
-                Text(getSpokenWord(for: currentSystemNumber))
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 15)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(16)
-                    .rotationEffect(Angle(degrees: 180))
+                VStack {
+                    Text(getSpokenWord(for: currentSystemNumber))
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 15)
+                        .padding(.vertical, 15)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(16)
+                        .rotationEffect(Angle(degrees: 180))
+                    Spacer()
+                    Text("Skor: \(scoreP2)")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(8)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(8)
+                }
+                .frame(width: .infinity, height: UIScreen.main.bounds.height * 0.32)
+                .rotationEffect(Angle(degrees: 180))
                 
                 Image(getCardImageName(value: currentCardValue, suit: currentSuit))
                     .resizable()
@@ -36,26 +58,51 @@ struct ContentView: View {
                     .shadow(color: .black.opacity(0.5), radius: 10, x:5, y:5)
                     .padding(.vertical, 30)
                 
-                Text(getSpokenWord(for: currentSystemNumber))
-                    .font(.system(size: 32, weight: .heavy, design: .rounded))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 15)
-                    .padding(.vertical, 15)
-                    .background(Color.black.opacity(0.7))
-                    .cornerRadius(16)
+                VStack {
+                    Text(getSpokenWord(for: currentSystemNumber))
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 15)
+                        .padding(.vertical, 15)
+                        .background(Color.black.opacity(0.7))
+                        .cornerRadius(16)
+                    Spacer()
+                    Text("Skor: \(scoreP1)")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .padding(8)
+                        .background(Color.black.opacity(0.8))
+                        .cornerRadius(8)
+                }
+                .frame(width: .infinity, height: UIScreen.main.bounds.height * 0.32)
                     
             }
             VStack (spacing: 0) {
-                Color.white.opacity(0.001)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        playerTapped(player: 2)
+                ZStack {
+                    Color.white.opacity(0.001).contentShape(Rectangle())
+                    if isFrozenP2 {
+                        Color.cyan.opacity(0.3)
+                        Text("FROZEN")
+                            .font(.system(size: 32, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .rotationEffect(Angle(degrees: 180))
                     }
-                Color.white.opacity(0.001)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        playerTapped(player: 1)
+                }
+                .onTapGesture {
+                    playerTapped(player: 2)
+                }
+                ZStack {
+                    Color.white.opacity(0.001).contentShape(Rectangle())
+                    if isFrozenP1 {
+                        Color.cyan.opacity(0.3)
+                        Text("FROZEN")
+                            .font(.system(size: 32, weight: .heavy))
+                            .foregroundStyle(.white)
                     }
+                }
+                .onTapGesture {
+                    playerTapped(player: 1)
+                }
             }
             Image("hand")
                 .resizable()
@@ -65,11 +112,24 @@ struct ContentView: View {
                 .shadow(radius: 10)
                 .scaleEffect(showingHand ? 1.0 : 1.5)
                 .opacity(showingHand ? 1 : 0)
+            
+            if showFeedback {
+                Text(feedbackMessage)
+                    .font(.title2)
+                    .foregroundColor(.white)
+                    .bold()
+                    .multilineTextAlignment(.center)
+                    .padding()
+                    .background(Color.black.opacity(0.7))
+                    .cornerRadius(16)
+                    .rotationEffect(.degrees(handAngle))
+                    .transition(.scale.combined(with: .opacity))
+            }
         }
-        .onAppear {
-            speak(word: getSpokenWord(for: currentSystemNumber))
-            startTimer()
-        }
+//        .onAppear {
+//            speak(word: getSpokenWord(for: currentSystemNumber))
+//            startTimer()
+//        }
     }
     
     func startTimer() {
@@ -99,6 +159,8 @@ struct ContentView: View {
     
     func playerTapped(player: Int) {
         guard !isPaused else { return }
+        if player == 1 && isFrozenP1 { return }
+        if player == 2 && isFrozenP2 { return }
         
         isPaused = true
         gameTimer?.invalidate()
@@ -109,13 +171,63 @@ struct ContentView: View {
             handAngle = player == 1 ? 0 : 180
         }
         
+        let isCorrect = (currentSystemNumber == currentCardValue)
+        
+        if isCorrect {
+            if player == 1 {
+                scoreP1 += 1
+            } else {
+                scoreP2 += 1
+            }
+            feedbackMessage = "Player \(player) benar \n +1 poin"
+        } else {
+            if player == 1 {
+                scoreP1 -= 1
+                if scoreP1 <= 0 {
+                    scoreP1 = 0
+                    isFrozenP1 = true
+                    feedbackMessage = "Player 1 salah \n Freeze 5 detik"
+                    unfreeze(player: 1)
+                } else {
+                    feedbackMessage = "Player 1 salah \n -1 poin"
+                }
+            } else {
+                scoreP2 -= 1
+                if scoreP2 <= 0 {
+                    scoreP2 = 0
+                    isFrozenP2 = true
+                    feedbackMessage = "Player 2 salah \n Freeze 5 detik"
+                    unfreeze(player: 2)
+                } else {
+                    feedbackMessage = "Player 2 salah \n -1 poin"
+                }
+            }
+        }
+        
+        withAnimation {
+            showFeedback = true
+        }
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation(.easeInOut(duration: 0.2)) {
                 showingHand = false
+                showFeedback = false
             }
             isPaused = false
             nextTurn()
             startTimer()
+        }
+    }
+    
+    func unfreeze(player: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+            withAnimation {
+                if player == 1 {
+                    isFrozenP1 = false
+                } else {
+                    isFrozenP2 = false
+                }
+            }
         }
     }
     
