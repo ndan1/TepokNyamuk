@@ -173,6 +173,9 @@ struct ContentView: View {
         
         let isCorrect = (currentSystemNumber == currentCardValue)
         
+        var triggerFreezeP1: Bool = false
+        var triggerFreezeP2: Bool = false
+        
         if isCorrect {
             if player == 1 {
                 scoreP1 += 1
@@ -183,21 +186,21 @@ struct ContentView: View {
         } else {
             if player == 1 {
                 scoreP1 -= 1
-                if scoreP1 <= 0 {
+                if scoreP1 < 0 {
                     scoreP1 = 0
                     isFrozenP1 = true
                     feedbackMessage = "Player 1 salah \n Freeze 5 detik"
-                    unfreeze(player: 1)
+                    triggerFreezeP1 = true
                 } else {
                     feedbackMessage = "Player 1 salah \n -1 poin"
                 }
             } else {
                 scoreP2 -= 1
-                if scoreP2 <= 0 {
+                if scoreP2 < 0 {
                     scoreP2 = 0
                     isFrozenP2 = true
                     feedbackMessage = "Player 2 salah \n Freeze 5 detik"
-                    unfreeze(player: 2)
+                    triggerFreezeP2 = true
                 } else {
                     feedbackMessage = "Player 2 salah \n -1 poin"
                 }
@@ -214,6 +217,14 @@ struct ContentView: View {
                 showFeedback = false
             }
             isPaused = false
+            
+            if triggerFreezeP1 {
+                unfreeze(player: 1)
+            }
+            if triggerFreezeP2 {
+                unfreeze(player: 2)
+            }
+            
             nextTurn()
             startTimer()
         }
