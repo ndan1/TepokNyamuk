@@ -19,6 +19,10 @@ struct ContentView: View {
     @State private var gameTimer: Timer?
     private let synthesizer = AVSpeechSynthesizer()
     
+    // Countdown
+    @State private var isCountingDown = false
+    @State private var countdownValue = 3
+    
     // Hand Slap
     @State private var showingHand = false
     @State private var handAngle: Double = 0
@@ -182,6 +186,7 @@ struct ContentView: View {
                 .frame(height: UIScreen.main.bounds.height * 0.32)
                     
             }
+            .opacity(isCountingDown ? 0 : 1)
             VStack (spacing: 0) {
                 ZStack {
                     Color.white.opacity(0.001).contentShape(Rectangle())
@@ -229,6 +234,19 @@ struct ContentView: View {
                     .cornerRadius(16)
                     .rotationEffect(.degrees(handAngle))
                     .transition(.scale.combined(with: .opacity))
+            }
+            
+            if isCountingDown {
+                Color.black.opacity(0.6)
+                    .ignoresSafeArea()
+                
+                Text(countdownValue > 0 ? "\(countdownValue)" : "Start!")
+                    .font(.system(size: countdownValue > 0 ? 120 : 180, weight: .black, design: .rounded))
+                    .foregroundColor(.white)
+                    .shadow(color: .black, radius: 10, x: 5, y: 5)
+                    .scaleEffect(countdownValue > 0 ? 1.0 : 1.3)
+                    .transition(.scale.combined(with: .opacity))
+                    .id(countdownValue)
             }
             
             if gameOver {
@@ -290,21 +308,47 @@ struct ContentView: View {
     }
     
     func resetGame() {
-        withAnimation {
-            scoreP1 = 0
-            scoreP2 = 0
-            isFrozenP1 = false
-            isFrozenP2 = false
-            currentSystemNumber = 1
-            gameOver = false
-            isPaused = false
-            showingHand = false
-            showFeedback = false
-        }
-//        nextTurn()
+        gameTimer?.invalidate()
         synthesizer.stopSpeaking(at: .immediate)
-        speak(word: getSpokenWord(for: currentSystemNumber))
-        startTimer()
+        
+        scoreP1 = 0
+        scoreP2 = 0
+        isFrozenP1 = false
+        isFrozenP2 = false
+        currentSystemNumber = 1
+        gameOver = false
+        isPaused = false
+        showingHand = false
+        showFeedback = false
+        
+        currentCardValue = Int.random(in: 1...13)
+        let suits = ["spades", "hearts", "diamonds", "clubs"]
+        currentSuit = suits.randomElement() ?? "spades"
+        
+        isCountingDown = true
+        countdownValue = 3
+        runCountdown()
+    }
+    
+    func runCountdown() {
+        guard currentScreen == .playing && isCountingDown else { return }
+        
+        if countdownValue > 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                    countdownValue -= 1
+                }
+                runCountdown()
+            }
+        } else {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    isCountingDown = false
+                }
+                speak(word: getSpokenWord(for: currentSystemNumber))
+                startTimer()
+            }
+        }
     }
     
     func nextTurn() {
@@ -324,6 +368,8 @@ struct ContentView: View {
     }
     
     func playerTapped(player: Int) {
+        guard !isCountingDown else { return }
+        
         guard !isPaused else { return }
         if player == 1 && isFrozenP1 { return }
         if player == 2 && isFrozenP2 { return }
