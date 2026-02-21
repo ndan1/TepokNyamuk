@@ -1,7 +1,15 @@
 import SwiftUI
 import AVFoundation
 
+enum AppScreen {
+    case menu
+    case tutorial
+    case playing
+}
+
 struct ContentView: View {
+    
+    @State private var currentScreen: AppScreen = .menu
     
     // Game Mechanic
     @State private var currentSystemNumber = 1
@@ -33,8 +41,99 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             Image("table")
+                .resizable()
                 .ignoresSafeArea()
             
+            switch currentScreen {
+            case .menu:
+                menuView
+            case .tutorial:
+                tutorialView
+            case .playing:
+                gameView
+            }
+        }
+    }
+    
+    var menuView: some View {
+        VStack (spacing: 32) {
+            Text("Tepok Nyamuk")
+                .font(.system(size: 60, weight: .black, design: .rounded))
+                .foregroundColor(.white)
+                .multilineTextAlignment(.center)
+                .shadow(color: .black, radius: 10, x: 5, y: 5)
+                .padding(.top, 50)
+            
+            Spacer()
+            
+            Button(action: {
+                currentScreen = .playing
+                resetGame()
+            }) {
+                Text("Play")
+                    .font(.title).bold()
+                    .foregroundColor(.white)
+                    .frame(width: 220)
+                    .padding()
+                    .background(Color.green)
+                    .cornerRadius(20)
+                    .shadow(radius: 5)
+            }
+            
+            Button(action: {
+                currentScreen = .tutorial
+            }) {
+                Text("Tutorial")
+                    .font(.title).bold()
+                    .foregroundColor(.white)
+                    .frame(width: 220)
+                    .padding()
+                    .background(Color.blue)
+                    .cornerRadius(20)
+                    .shadow(radius: 5)
+            }
+            
+            Spacer()
+        }
+    }
+    
+    var tutorialView: some View {
+        VStack {
+            Spacer()
+            
+            VStack (spacing: 20) {
+                Text("How to Play")
+                    .font(.title).bold()
+                    .foregroundColor(.white)
+                
+                Text("Lorem ipsum dolor sit amet consectetur adipisicing elit. Quo, voluptatem!")
+                    .foregroundColor(.white)
+                    .multilineTextAlignment(.center)
+                    .padding()
+                
+                Button {
+                    currentScreen = .menu
+                } label: {
+                    Text("Back")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 30)
+                        .padding(.vertical, 10)
+                        .background(Color.red)
+                        .cornerRadius(10)
+                }
+            }
+            .padding(30)
+            .background(Color.black.opacity(0.9))
+            .cornerRadius(20)
+            .padding(.horizontal, 20)
+            
+            Spacer()
+        }
+    }
+    
+    var gameView: some View {
+        ZStack {
             VStack (spacing: 0) {
                 VStack {
                     Text(getSpokenWord(for: currentSystemNumber))
@@ -52,7 +151,8 @@ struct ContentView: View {
                         .background(Color.black.opacity(0.8))
                         .cornerRadius(8)
                 }
-                .frame(width: .infinity, height: UIScreen.main.bounds.height * 0.32)
+                .frame(maxWidth: .infinity)
+                .frame(height: UIScreen.main.bounds.height * 0.32)
                 .rotationEffect(Angle(degrees: 180))
                 
                 Image(getCardImageName(value: currentCardValue, suit: currentSuit))
@@ -78,14 +178,15 @@ struct ContentView: View {
                         .background(Color.black.opacity(0.8))
                         .cornerRadius(8)
                 }
-                .frame(width: .infinity, height: UIScreen.main.bounds.height * 0.32)
+                .frame(maxWidth: .infinity)
+                .frame(height: UIScreen.main.bounds.height * 0.32)
                     
             }
             VStack (spacing: 0) {
                 ZStack {
                     Color.white.opacity(0.001).contentShape(Rectangle())
                     if isFrozenP2 {
-                        Color.cyan.opacity(0.3)
+                        Color.cyan.opacity(0.3).ignoresSafeArea()
                         Text("FROZEN")
                             .font(.system(size: 32, weight: .heavy))
                             .foregroundStyle(.white)
@@ -98,7 +199,7 @@ struct ContentView: View {
                 ZStack {
                     Color.white.opacity(0.001).contentShape(Rectangle())
                     if isFrozenP1 {
-                        Color.cyan.opacity(0.3)
+                        Color.cyan.opacity(0.3).ignoresSafeArea()
                         Text("FROZEN")
                             .font(.system(size: 32, weight: .heavy))
                             .foregroundStyle(.white)
@@ -134,35 +235,51 @@ struct ContentView: View {
                 Color.black.opacity(0.9)
                     .ignoresSafeArea()
                 
-                VStack {
+                VStack (spacing: 40) {
                     Text(winnerText)
                         .font(.system(size: 40, weight: .black, design: .rounded))
                         .foregroundStyle(.yellow)
                         .multilineTextAlignment(.center)
                         .shadow(color: .orange, radius: 10, x: 0, y: 0)
-                    Button {
-                        resetGame()
-                    } label: {
-                        Text("Main Lagi")
-                            .font(.title2)
-                            .bold()
-                            .foregroundStyle(.white)
-                            .padding(.horizontal, 40)
-                            .padding(.vertical, 15)
-                            .background(Color.green)
-                            .cornerRadius(20)
-                            .shadow(radius: 5)
+                    VStack (spacing: 24) {
+                        Button {
+                            resetGame()
+                        } label: {
+                            Text("Play Again")
+                                .font(.title2)
+                                .bold()
+                                .foregroundStyle(.white)
+                                .frame(width: 200)
+                                .padding(.horizontal, 40)
+                                .padding(.vertical, 15)
+                                .background(Color.green)
+                                .cornerRadius(20)
+                                .shadow(radius: 5)
+                        }
+                        
+                        Button {
+                            gameTimer?.invalidate()
+                            synthesizer.stopSpeaking(at: .immediate)
+                            gameOver = false
+                            currentScreen = .menu
+                        } label: {
+                            Text("Menu")
+                                .font(.title2)
+                                .bold()
+                                .foregroundStyle(.white)
+                                .frame(width: 200)
+                                .padding(.horizontal, 40)
+                                .padding(.vertical, 15)
+                                .background(Color.red)
+                                .cornerRadius(20)
+                                .shadow(radius: 5)
+                        }
                     }
                 }
                 .transition(.scale)
             }
         }
-//        .onAppear {
-//            speak(word: getSpokenWord(for: currentSystemNumber))
-//            startTimer()
-//        }
     }
-    
     func startTimer() {
         gameTimer?.invalidate()
         gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
@@ -181,8 +298,12 @@ struct ContentView: View {
             currentSystemNumber = 1
             gameOver = false
             isPaused = false
+            showingHand = false
+            showFeedback = false
         }
-        nextTurn()
+//        nextTurn()
+        synthesizer.stopSpeaking(at: .immediate)
+        speak(word: getSpokenWord(for: currentSystemNumber))
         startTimer()
     }
     
@@ -227,27 +348,27 @@ struct ContentView: View {
             } else {
                 scoreP2 += 1
             }
-            feedbackMessage = "Player \(player) benar \n +1 poin"
+            feedbackMessage = "Player \(player) got it! \n +1 point"
         } else {
             if player == 1 {
                 scoreP1 -= 1
                 if scoreP1 < 0 {
                     scoreP1 = 0
                     isFrozenP1 = true
-                    feedbackMessage = "Player 1 salah \n Freeze 5 detik"
+                    feedbackMessage = "Player 1 slap the wrong card! \n Freeze 5 second"
                     triggerFreezeP1 = true
                 } else {
-                    feedbackMessage = "Player 1 salah \n -1 poin"
+                    feedbackMessage = "Player 1 slap the wrong card! \n -1 point"
                 }
             } else {
                 scoreP2 -= 1
                 if scoreP2 < 0 {
                     scoreP2 = 0
                     isFrozenP2 = true
-                    feedbackMessage = "Player 2 salah \n Freeze 5 detik"
+                    feedbackMessage = "Player 2 slap the wrong card! \n Freeze 5 second"
                     triggerFreezeP2 = true
                 } else {
-                    feedbackMessage = "Player 2 salah \n -1 poin"
+                    feedbackMessage = "Player 2 slap the wrong card! \n -1 point"
                 }
             }
         }
@@ -258,10 +379,10 @@ struct ContentView: View {
         
         var isGameFinished = false
         if scoreP1 >= winningScore {
-            winnerText = "Player 1 Menang"
+            winnerText = "Player 1 Win"
             isGameFinished = true
         } else if scoreP2 >= winningScore {
-            winnerText = "Player 2 Menang"
+            winnerText = "Player 2 Win"
             isGameFinished = true
         }
         
