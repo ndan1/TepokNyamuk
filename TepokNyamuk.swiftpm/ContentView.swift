@@ -110,13 +110,39 @@ struct ContentView: View {
                     .font(.title).bold()
                     .foregroundColor(.white)
                 
-                Text("Lorem ipsum dolor sit amet consectetur adipisicing elit. Quo, voluptatem!")
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding()
+                TabView {
+                    tutorialPage(
+                        imageName: "tutor_area",
+                        title: "1. Know Your Tap Area",
+                        desc: "Top half is Player 2. \nBottom half is Player 1.\nTap your side only!"
+                    )
+                    
+                    tutorialPage(
+                        imageName: "tutor_match",
+                        title: "2. Focus",
+                        desc: "Wait until the spoken/written number matches the card number shown in the center."
+                    )
+                                        
+                    tutorialPage(
+                        imageName: "tutor_score",
+                        title: "3. Slap Fast!",
+                        desc: "Be the first to slap your area to get +1 Point.\nFirst to \(winningScore) Points wins!"
+                    )
+                                        
+                    tutorialPage(
+                        imageName: "tutor_freeze",
+                        title: "4. Penalty",
+                        desc: "Wrong slap makes you lose 1 Point.\nIf your score is 0 and you slap incorrectly, you FREEZE for 5 seconds."
+                    )
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .always))
+                .indexViewStyle(PageIndexViewStyle(backgroundDisplayMode: .always))
+                .frame(height: 480)
                 
                 Button {
-                    currentScreen = .menu
+                    withAnimation {
+                        currentScreen = .menu
+                    }
                 } label: {
                     Text("Back")
                         .font(.headline)
@@ -127,7 +153,8 @@ struct ContentView: View {
                         .cornerRadius(10)
                 }
             }
-            .padding(30)
+            .frame(maxWidth: 350)
+            .padding(.vertical, 20)
             .background(Color.black.opacity(0.9))
             .cornerRadius(20)
             .padding(.horizontal, 20)
@@ -148,7 +175,7 @@ struct ContentView: View {
                         .background(Color.black.opacity(0.7))
                         .cornerRadius(16)
                     Spacer()
-                    Text("Skor: \(scoreP2)")
+                    Text("Score: \(scoreP2)")
                         .font(.headline)
                         .foregroundStyle(.white)
                         .padding(8)
@@ -175,7 +202,7 @@ struct ContentView: View {
                         .background(Color.black.opacity(0.7))
                         .cornerRadius(16)
                     Spacer()
-                    Text("Skor: \(scoreP1)")
+                    Text("Score: \(scoreP1)")
                         .font(.headline)
                         .foregroundStyle(.white)
                         .padding(8)
@@ -241,7 +268,7 @@ struct ContentView: View {
                     .ignoresSafeArea()
                 
                 Text(countdownValue > 0 ? "\(countdownValue)" : "Start!")
-                    .font(.system(size: countdownValue > 0 ? 120 : 180, weight: .black, design: .rounded))
+                    .font(.system(size: countdownValue > 0 ? 120 : 80, weight: .black, design: .rounded))
                     .foregroundColor(.white)
                     .shadow(color: .black, radius: 10, x: 5, y: 5)
                     .scaleEffect(countdownValue > 0 ? 1.0 : 1.3)
@@ -520,6 +547,31 @@ struct ContentView: View {
         
         synthesizer.stopSpeaking(at: .immediate)
         synthesizer.speak(utterance)
+    }
+    
+    func tutorialPage(imageName: String, title: String, desc: String) -> some View {
+        VStack (spacing: 20) {
+            Text(title)
+                .font(.title2)
+                .bold()
+                .foregroundColor(.white)
+            
+            Image(imageName)
+                .resizable()
+                .scaledToFit()
+                .frame(height: 280)
+                .cornerRadius(12)
+                .shadow(radius: 5)
+            
+            Text(desc)
+                .font(.body)
+                .foregroundColor(.white.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 20)
+            
+            Spacer()
+        }
+        .padding(.top, 10)
     }
     
 }
