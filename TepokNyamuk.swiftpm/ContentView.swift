@@ -25,6 +25,11 @@ struct ContentView: View {
     @State private var feedbackMessage = ""
     @State private var showFeedback = false
     
+    // Game Over or Win
+    let winningScore = 1
+    @State private var gameOver = false
+    @State private var winnerText = ""
+    
     var body: some View {
         ZStack {
             Image("table")
@@ -39,7 +44,6 @@ struct ContentView: View {
                         .padding(.vertical, 15)
                         .background(Color.black.opacity(0.7))
                         .cornerRadius(16)
-                        .rotationEffect(Angle(degrees: 180))
                     Spacer()
                     Text("Skor: \(scoreP2)")
                         .font(.headline)
@@ -125,6 +129,33 @@ struct ContentView: View {
                     .rotationEffect(.degrees(handAngle))
                     .transition(.scale.combined(with: .opacity))
             }
+            
+            if gameOver {
+                Color.black.opacity(0.9)
+                    .ignoresSafeArea()
+                
+                VStack {
+                    Text(winnerText)
+                        .font(.system(size: 40, weight: .black, design: .rounded))
+                        .foregroundStyle(.yellow)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: .orange, radius: 10, x: 0, y: 0)
+                    Button {
+                        resetGame()
+                    } label: {
+                        Text("Main Lagi")
+                            .font(.title2)
+                            .bold()
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 40)
+                            .padding(.vertical, 15)
+                            .background(Color.green)
+                            .cornerRadius(20)
+                            .shadow(radius: 5)
+                    }
+                }
+                .transition(.scale)
+            }
         }
 //        .onAppear {
 //            speak(word: getSpokenWord(for: currentSystemNumber))
@@ -139,6 +170,20 @@ struct ContentView: View {
                 nextTurn()
             }
         }
+    }
+    
+    func resetGame() {
+        withAnimation {
+            scoreP1 = 0
+            scoreP2 = 0
+            isFrozenP1 = false
+            isFrozenP2 = false
+            currentSystemNumber = 1
+            gameOver = false
+            isPaused = false
+        }
+        nextTurn()
+        startTimer()
     }
     
     func nextTurn() {
@@ -211,22 +256,36 @@ struct ContentView: View {
             showFeedback = true
         }
         
+        var isGameFinished = false
+        if scoreP1 >= winningScore {
+            winnerText = "Player 1 Menang"
+            isGameFinished = true
+        } else if scoreP2 >= winningScore {
+            winnerText = "Player 2 Menang"
+            isGameFinished = true
+        }
+        
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
             withAnimation(.easeInOut(duration: 0.2)) {
                 showingHand = false
                 showFeedback = false
             }
-            isPaused = false
             
-            if triggerFreezeP1 {
-                unfreeze(player: 1)
+            if isGameFinished {
+                withAnimation{ gameOver = true }
+            } else {
+                isPaused = false
+                
+                if triggerFreezeP1 {
+                    unfreeze(player: 1)
+                }
+                if triggerFreezeP2 {
+                    unfreeze(player: 2)
+                }
+                
+                nextTurn()
+                startTimer()
             }
-            if triggerFreezeP2 {
-                unfreeze(player: 2)
-            }
-            
-            nextTurn()
-            startTimer()
         }
     }
     
