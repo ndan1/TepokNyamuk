@@ -107,6 +107,7 @@ struct GameplayView: View {
                     .cornerRadius(16)
                     .rotationEffect(.degrees(gameManager.handAngle))
                     .transition(.scale.combined(with: .opacity))
+                    .padding(.horizontal, 48)
             }
             
             if gameManager.isCountingDown {

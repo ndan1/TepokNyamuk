@@ -212,20 +212,20 @@ class GameManager: ObservableObject {
                 if scoreP1 < 0 {
                     scoreP1 = 0
                     isFrozenP1 = true
-                    feedbackMessage = "Player 1 slap the wrong card! \n Freeze 5 second"
+                    feedbackMessage = "Wrong card Player 1! \n Freeze 5 second"
                     triggerFreezeP1 = true
                 } else {
-                    feedbackMessage = "Player 1 slap the wrong card! \n -1 point"
+                    feedbackMessage = "Wrong card Player 1! \n -1 point"
                 }
             } else {
                 scoreP2 -= 1
                 if scoreP2 < 0 {
                     scoreP2 = 0
                     isFrozenP2 = true
-                    feedbackMessage = "Player 2 slap the wrong card! \n Freeze 5 second"
+                    feedbackMessage = "Wrong card Player 2! \n Freeze 5 second"
                     triggerFreezeP2 = true
                 } else {
-                    feedbackMessage = "Player 2 slap the wrong card! \n -1 point"
+                    feedbackMessage = "Wrong card Player 2! \n -1 point"
                 }
             }
         }
