@@ -32,6 +32,7 @@ class GameManager: ObservableObject {
     // Countdown
     @Published var isCountingDown = false
     @Published var countdownValue = 3
+    @Published var pendingNextTurn = false
     
     // Pause the game
     @Published var isUserPaused = false
@@ -94,7 +95,7 @@ class GameManager: ObservableObject {
     }
     
     func pauseGame() {
-        guard !isCountingDown && !gameOver && !isPaused else { return }
+        guard !isCountingDown && !gameOver else { return }
         
         withAnimation {
             isUserPaused = true
@@ -109,8 +110,15 @@ class GameManager: ObservableObject {
         withAnimation {
             isUserPaused = false
         }
-        speak(word: getSpokenWord(for: currentSystemNumber))
-        startTimer()
+        
+        if pendingNextTurn {
+            pendingNextTurn = false
+            nextTurn()
+            startTimer()
+        } else if !isPaused {
+            speak(word: getSpokenWord(for: currentSystemNumber))
+            startTimer()
+        }
     }
     
     func resetGame() {
@@ -124,6 +132,7 @@ class GameManager: ObservableObject {
         isFrozenP2 = false
         freezeTimeRemainingP1 = 0
         freezeTimeRemainingP2 = 0
+        pendingNextTurn = false
         currentSystemNumber = 1
         gameOver = false
         isPaused = false
@@ -196,9 +205,6 @@ class GameManager: ObservableObject {
         
         let isCorrect = (currentSystemNumber == currentCardValue)
         
-        var triggerFreezeP1: Bool = false
-        var triggerFreezeP2: Bool = false
-        
         if isCorrect {
             if player == 1 {
                 scoreP1 += 1
@@ -213,7 +219,7 @@ class GameManager: ObservableObject {
                     scoreP1 = 0
                     isFrozenP1 = true
                     feedbackMessage = "Wrong card Player 1! \n Freeze 5 second"
-                    triggerFreezeP1 = true
+                    freezeTimeRemainingP1 = 5.0
                 } else {
                     feedbackMessage = "Wrong card Player 1! \n -1 point"
                 }
@@ -223,7 +229,7 @@ class GameManager: ObservableObject {
                     scoreP2 = 0
                     isFrozenP2 = true
                     feedbackMessage = "Wrong card Player 2! \n Freeze 5 second"
-                    triggerFreezeP2 = true
+                    freezeTimeRemainingP2 = 5.0
                 } else {
                     feedbackMessage = "Wrong card Player 2! \n -1 point"
                 }
@@ -254,15 +260,12 @@ class GameManager: ObservableObject {
             } else {
                 isPaused = false
                 
-                if triggerFreezeP1 {
-                    freezeTimeRemainingP1 = 5.0
+                if isUserPaused {
+                    pendingNextTurn = true
+                } else {
+                    nextTurn()
+                    startTimer()
                 }
-                if triggerFreezeP2 {
-                    freezeTimeRemainingP2 = 5.0
-                }
-                
-                nextTurn()
-                startTimer()
             }
         }
     }
