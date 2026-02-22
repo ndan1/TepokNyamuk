@@ -23,6 +23,9 @@ struct ContentView: View {
     @State private var isCountingDown = false
     @State private var countdownValue = 3
     
+    // Pause the game
+    @State private var isUserPaused = false
+    
     // Hand Slap
     @State private var showingHand = false
     @State private var handAngle: Double = 0
@@ -323,6 +326,84 @@ struct ContentView: View {
                 }
                 .transition(.scale)
             }
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    Button {
+                        pauseGame()
+                    } label: {
+                        Image(systemName: "pause.circle.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 50, height: 50)
+                            .foregroundColor(.white.opacity(0.8))
+                            .shadow(radius: 5)
+                            .padding(.trailing, 20)
+                    }
+                }
+                Spacer()
+            }
+            .opacity((isCountingDown || gameOver || isUserPaused) ? 0 : 1)
+            
+            if isUserPaused {
+                Color.black.opacity(0.9)
+                    .ignoresSafeArea()
+                
+                VStack (spacing: 30) {
+                    Text("Game Paused")
+                        .font(.system(size: 36, weight: .black, design: .rounded))
+                        .foregroundColor(.white)
+                        .shadow(radius: 5)
+                        .padding(.bottom, 10)
+                    
+                    Button {
+                        resumeGame()
+                    } label: {
+                        Text("Resume")
+                            .font(.title2)
+                            .bold()
+                            .foregroundColor(.white)
+                            .frame(width: 220)
+                            .padding(.vertical, 15)
+                            .background(Color.green)
+                            .cornerRadius(15)
+                            .shadow(radius: 5)
+                    }
+                    
+                    Button {
+                        resetGame()
+                    } label: {
+                        Text("Restart")
+                            .font(.title2)
+                            .bold()
+                            .foregroundColor(.white)
+                            .frame(width: 220)
+                            .padding(.vertical, 15)
+                            .background(Color.blue)
+                            .cornerRadius(15)
+                            .shadow(radius: 5)
+                    }
+                    
+                    Button {
+                        gameTimer?.invalidate()
+                        synthesizer.stopSpeaking(at: .immediate)
+                        isUserPaused = false
+                        currentScreen = .menu
+                    } label: {
+                        Text("Back to Menu")
+                            .font(.title2)
+                            .bold()
+                            .foregroundColor(.white)
+                            .frame(width: 220)
+                            .padding(.vertical, 15)
+                            .background(Color.red)
+                            .cornerRadius(15)
+                            .shadow(radius: 5)
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
         }
     }
     func startTimer() {
@@ -332,6 +413,25 @@ struct ContentView: View {
                 nextTurn()
             }
         }
+    }
+    
+    func pauseGame() {
+        guard !isCountingDown && !gameOver && !isPaused else { return }
+        
+        withAnimation {
+            isUserPaused = true
+        }
+        
+        gameTimer?.invalidate()
+        synthesizer.stopSpeaking(at: .immediate)
+    }
+    
+    func resumeGame() {
+        withAnimation {
+            isUserPaused = false
+        }
+        speak(word: getSpokenWord(for: currentSystemNumber))
+        startTimer()
     }
     
     func resetGame() {
@@ -347,6 +447,7 @@ struct ContentView: View {
         isPaused = false
         showingHand = false
         showFeedback = false
+        isUserPaused = false
         
         currentCardValue = Int.random(in: 1...13)
         let suits = ["spades", "hearts", "diamonds", "clubs"]
@@ -396,7 +497,7 @@ struct ContentView: View {
     
     func playerTapped(player: Int) {
         guard !isCountingDown else { return }
-        
+        guard !isUserPaused else { return }
         guard !isPaused else { return }
         if player == 1 && isFrozenP1 { return }
         if player == 2 && isFrozenP2 { return }
