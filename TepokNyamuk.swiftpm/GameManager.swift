@@ -25,6 +25,9 @@ class GameManager: ObservableObject {
     @Published var isPaused = false
     @Published var gameTimer: Timer?
     let synthesizer = AVSpeechSynthesizer()
+    var freezeTimer: Timer?
+    @Published var freezeTimeRemainingP1: Double = 0
+    @Published var freezeTimeRemainingP2: Double = 0
     
     // Countdown
     @Published var isCountingDown = false
@@ -59,6 +62,35 @@ class GameManager: ObservableObject {
                 self.nextTurn()
             }
         }
+        
+        freezeTimer?.invalidate()
+        freezeTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            Task { @MainActor in
+                self.updateFreezeTime()
+            }
+        }
+    }
+    
+    func updateFreezeTime() {
+        guard !isPaused && !isUserPaused && !isCountingDown else { return }
+        
+        if isFrozenP1 && freezeTimeRemainingP1 > 0 {
+            freezeTimeRemainingP1 -= 0.1
+            if freezeTimeRemainingP1 <= 0 {
+                withAnimation {
+                    isFrozenP1 = false
+                }
+            }
+        }
+        
+        if isFrozenP2 && freezeTimeRemainingP2 > 0 {
+            freezeTimeRemainingP2 -= 0.1
+            if freezeTimeRemainingP2 <= 0 {
+                withAnimation {
+                    isFrozenP2 = false
+                }
+            }
+        }
     }
     
     func pauseGame() {
@@ -69,6 +101,7 @@ class GameManager: ObservableObject {
         }
         
         gameTimer?.invalidate()
+        freezeTimer?.invalidate()
         synthesizer.stopSpeaking(at: .immediate)
     }
     
@@ -82,12 +115,15 @@ class GameManager: ObservableObject {
     
     func resetGame() {
         gameTimer?.invalidate()
+        freezeTimer?.invalidate()
         synthesizer.stopSpeaking(at: .immediate)
         
         scoreP1 = 0
         scoreP2 = 0
         isFrozenP1 = false
         isFrozenP2 = false
+        freezeTimeRemainingP1 = 0
+        freezeTimeRemainingP2 = 0
         currentSystemNumber = 1
         gameOver = false
         isPaused = false
@@ -150,6 +186,7 @@ class GameManager: ObservableObject {
         
         isPaused = true
         gameTimer?.invalidate()
+        freezeTimer?.invalidate()
         synthesizer.stopSpeaking(at: .immediate)
         
         withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
@@ -218,26 +255,14 @@ class GameManager: ObservableObject {
                 isPaused = false
                 
                 if triggerFreezeP1 {
-                    unfreeze(player: 1)
+                    freezeTimeRemainingP1 = 5.0
                 }
                 if triggerFreezeP2 {
-                    unfreeze(player: 2)
+                    freezeTimeRemainingP2 = 5.0
                 }
                 
                 nextTurn()
                 startTimer()
-            }
-        }
-    }
-    
-    func unfreeze(player: Int) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
-            withAnimation {
-                if player == 1 {
-                    self.isFrozenP1 = false
-                } else {
-                    self.isFrozenP2 = false
-                }
             }
         }
     }
