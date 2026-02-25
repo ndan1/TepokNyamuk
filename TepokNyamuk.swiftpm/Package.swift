@@ -8,19 +8,19 @@ import PackageDescription
 import AppleProductTypes
 
 let package = Package(
-    name: "TepokNyamuk",
+    name: "Tepok Nyamuk",
     platforms: [
         .iOS("16.0")
     ],
     products: [
         .iOSApplication(
-            name: "TepokNyamuk",
+            name: "Tepok Nyamuk",
             targets: ["AppModule"],
-            bundleIdentifier: "learning.TepokNyamuk",
+            bundleIdentifier: "com.lindan.TepokNyamuk",
             teamIdentifier: "5AGMV642WQ",
             displayVersion: "1.0",
             bundleVersion: "1",
-            appIcon: .placeholder(icon: .cloud),
+            appIcon: .asset("AppIcon"),
             accentColor: .presetColor(.cyan),
             supportedDeviceFamilies: [
                 .pad,
