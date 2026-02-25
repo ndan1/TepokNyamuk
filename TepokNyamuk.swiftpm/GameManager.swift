@@ -52,7 +52,7 @@ class GameManager: ObservableObject {
     @Published var showFeedback = false
     
     // Game Over or Win
-    let winningScore = 1
+    let winningScore = 3
     @Published var gameOver = false
     @Published var winnerText = ""
     
